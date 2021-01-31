@@ -97,7 +97,7 @@ get_all_data = function(years, gender)
   return(df_all)
 }
 
-scrap_data = function()
+scrape_data = function()
   {
   # desired years
   years <- seq(1999,2012,1) 
@@ -119,7 +119,7 @@ scrap_data = function()
 }
 
 # run script
-# scrap_data()
+# scrape_data()
 
 
 # We have seen that the 1999 runners were typically older than the 2012 runners.  

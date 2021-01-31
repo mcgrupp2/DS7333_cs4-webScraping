@@ -6,8 +6,14 @@ subtitle: |
 author: "Jason Rupp and Indy Dhillon"
 date: "February 4, 2021"
 output:
-  prettydoc::html_pretty:
-    theme: cayman
+  rmdformats::robobook:
+    code_folding: show
+    self_contained: true
+    thumbnails: false
+    lightbox: true
+    number_sections: true
+pkgdown:
+  as_is: true   
 ---
 
 ```{css, echo=FALSE}
@@ -54,9 +60,180 @@ The aim of this case study is to develop new tools to automate collection of rac
 There has been an apparent trend in the age of male runners entering the Cherry Blossom Race, male runners in 1999 were typically older than those which ran the race in 2012. This case study will compare the age distribution of the runners across all 14 years of the races by using quantile-quantile plots, boxplots, density curves, and other methods to make comparisons. How have the distributions changed over the years and was it gradual? 
 
 # Methods
-The new format for the Cherry Blossom website has the same format for every race, but the new pages are paginated and a different call has to be made for every race, year, and gender. The function below retrieves the table containing the data on each page, which is identified by the <table> html tag. 
 
-```{r return_dataTable}
+The accompanying code for the methods used can be found in the <a href="#functions"> Functions Section</a> of the Appendix.
+
+## Web Scraping
+
+One benefit of the new format for the Cherry Blossom website is that subsequent years have the same format for every race. What makes the new format different is that the race data results are paginated and a different call has to be made for every race, year, and gender. Even though the results are spread across several pages, the new format is far better suited to collect any range of data, as the race data for every year since the inception of the race is in the same format. The data from the site was retrieved using a series of the functions.
+
+This first function `return_dataTable()` (<a href="#function621">Function 6.2.1</a>) retrieves the table containing the data on each page, which is identified by the \<table> html tag and will return the data in a dataframe. 
+
+The next function `collect_data()` (<a href="#function622">Function 6.2.2</a>) gathers all the data for a single race year from the paginated tables for an individual year-gender combo. The URL strings are built based on the year, gender, page number and first letter of gender. This url could also be modified to get results from the 5 mile Cherry Blossom Race, if desired. The first page for the year is fetched to create an initial dataframe, and to find data about that race year. Each year has a different number of pages which will be unknown without looking at each year, however what is constant is there are 20 runners displayed per page. The total number of runners is found from the `PiS/TiS` the first page for the year to figure out how many pages to query then pages are queried one at a time.
+
+Next is the `get_all_data()` function (<a href="#function623">Function 6.2.3</a>) that takes the list of years for one gender and retrieves the data over the year range using the previous `collect_data()` function. It then stores this data as a csv for later processing as collecting multiple years can be time intensive.
+
+Finally the `scrape_data()` function that puts everything together to build the list of years and scrape the data for both genders. Currently, the function will retrieve the list of years outlined in this Case Study (1999-2012), and for **both** genders, but it could be modified. This function would allow the web scraping to be called as a script file.
+
+Once all the data has been scraped, we proceed with our analysis to investigate the change in age distribution of men entering the race over time. We start by loading the csv for the Men's data the we
+scraped above and adding column names.
+
+## Data Cleanup
+
+```{r eval=FALSE, include=FALSE}
+# column names for data from site
+col_names <- c("race", 
+               "name", 
+               "age", 
+               "time", 
+               "pace", 
+               "placeInSex", 
+               "division", 
+               "placeInDivision", 
+               "hometown")
+
+# read csv of compiled Mens data
+df_all_mens <- read_csv("data/allDataMen.csv", 
+                        col_types = cols(Age = col_character()))
+
+# set the names for the df
+names(df_all_mens) <- col_names
+
+# show how many rows in total dataset
+dim(df_all_mens)
+```
+
+The data still requires some processing to be useful for our analysis. In the next code block the rows with age values of "NR" are removed. Then the age and year are cast as integers and division as a factor.
+
+```{r eval=FALSE, include=FALSE}
+# eliminate rows with NR for age
+df_trim <- df_all_mens[which(df_all_mens$age != "NR"),]
+
+# show how many eliminated from data
+dim(df_trim)
+
+# switch the age column from character to integer
+df_trim$age <- as.integer(df_trim$age)
+
+# this will take the race column split on whitespace, and index year data
+minus <- which(unlist(strsplit(df_trim$race, "\\s")) != "10M")
+
+# creates year column 
+df_trim$year <- as.integer(unlist(strsplit(df_trim$race, "\\s"))[minus])
+
+# turns division column into factor
+df_trim$division <- as.factor(df_trim$division)
+```
+
+
+The hometown feature requires a bit more formatting because it can contain a "city, state" combo for US runners or simply a country for international runners. The next code block splits the hometown field by the comma and when the comma is missing, it is presumed that the runner is international.
+
+For this analysis we are not interested at the state level, but we keep the state and international country data and we put both into a field called "state2".
+
+!!!!!! Jason, I'm not sure what I wrote above is accurate !!!!!
+
+
+``` {r FormatState, eval=FALSE, include=FALSE}
+extract_state = function(string)
+  {
+  tmp <- string
+  if (grepl(",", string) == "TRUE"){
+    tmp <- str_trim(strsplit(string, ",")[[1]][2])
+  }
+  return(tmp)
+}
+
+#extract_state(df_trim$hometown[900])
+
+df_trim$state2 <- unlist(lapply(df_trim$hometown, extract_state))
+
+df_trim$state <- ifelse((grepl(",", df_trim$hometown) == "TRUE"),substr(df_trim$hometown, nchar(df_trim$hometown) - 2, nchar(df_trim$hometown)), "NaS")
+
+df_trim[which(str_locate(df_trim$hometown, ",") - nchar(df_trim$hometown) != -3),]
+df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= 3),]
+
+unlist(unique(df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= 3),"hometown"]))
+```
+
+
+With the variables of interest extracted, we are create summaries of the age by year and the count of runners per division per year. We also add 0 runners for two divisions with missing data to make further analysis easier.
+
+``` {r SummaryDataframes, eval=FALSE, include=FALSE}
+# create summary dataframe by year
+df_age_stats <- df_trim %>%
+                  group_by(year) %>%
+                  summarize(
+                    mean = mean(age), 
+                    sd = sd(age),
+                    oldest = max(age),
+                    yngest = min(age),
+                    n=n(),
+                    skew = skewness(age)
+                    )
+
+# create dataframe of number of racers per division, per year
+df_div_stats <- df_trim %>%
+                  group_by(division, year) %>%
+                  summarize(
+                    n=n()
+                    )
+
+# names for above dataframe, need to add data
+div_stat_names <- c("division", "year", "n")
+
+# adding missing data
+df_row_to_add <- data.frame("M8099", 2002, 0)
+df_row_to_add2 <- data.frame("M8099", 2000, 0)
+names(df_row_to_add)<-div_stat_names
+names(df_row_to_add2)<-div_stat_names
+
+df_div_stats <- rbind(df_div_stats, df_row_to_add)
+df_div_stats <- rbind(df_div_stats, df_row_to_add2)
+```
+
+!!!!!!! This is where it errors for me !!!!!!!!!
+
+``` {r eval=FALSE, include=FALSE}
+df_div_stats$division <- as.factor(df_div_stats$division)
+```
+
+
+
+## Men's Data Analysis
+
+
+
+# Results
+
+
+
+
+# Conclusion
+
+
+
+# Appendix
+
+## Sources
+
+[w3schools HTML Tags: https://www.w3schools.com/tags/default.asp](https://www.w3schools.com/tags/default.asp)
+
+**Nolan, Deborah; Lang, Duncan Temple.**; *Data Science in R: A Case Studies Approach to Computational Reasoning and Problem Solving*; Chapter 2 pgs 45-103.
+
+[Cherry Blossom Race](https://www.cherryblossom.org/)
+
+[Cherry Blossom Race Database](http://www.cballtimeresults.org/performances)
+
+
+<a id="functions"></a>
+
+## Functions
+
+<a id="function621"></a>
+
+### Fetch Datatable 
+
+```{r return_dataTable, eval=FALSE}
 return_dataTable <- function(url)
 {
   # Fetch the page passed as url, expects cherry blossom database site
@@ -74,9 +251,13 @@ return_dataTable <- function(url)
 }
 ```
 
-The next function gathers all the data from the paginated tables for an indivdiual year-gender combo. The URL string are build based on these variables and the pages are queried one at a time using the total number of runner to figure out how many pages to query (since there are 20 runner displayed per page). 
+The `return_dataTable()` function puts the data that is in the HTML table on the cherry blossom run database website into a dataframe.
 
-```{r collect_data}
+<a id="function622"></a>
+
+### Collect Annual Data 
+
+```{r collect_data, eval = FALSE}
 collect_data <- function(year, gender)
 {
   # Fetch data for first page of desired gender/year combo, needed to create dataframe to add subsequent pages
@@ -129,9 +310,10 @@ collect_data <- function(year, gender)
 }
 ```
 
-Next is a function that takes the list of years for one gender and retrieves the data for the gender over the year range using the previous "get_all_data" function. It then stores this data as a csv for later processing.
 
-```{r get_all_data}
+### Collect Mutli-Year Data 
+
+```{r get_all_data, eval=FALSE, include=FALSE}
 get_all_data = function(years, gender)
 {
   # seed dataframe for loop due to column name issue
@@ -149,15 +331,17 @@ get_all_data = function(years, gender)
   }
   
   # write results to csv with file name "allData[gender].csv" for later analysis
-  write_csv(df_all, paste("caseStudy04_Scraping/data/allData", gender,".csv",sep = ""))
+  write_csv(df_all, paste("data/allData", gender,".csv",sep = ""))
   return(df_all)
 }
 ```
 
-Below is the function that puts together everything above to build the list of years and scrape the data for both genders using the "get_all_data" funciton above.
+The above function will be passed a list of desired years (1973-present) to retrieve data for a single gender.
 
-``` {r scrap_data}
-scrap_data = function()
+### Scrape All Data
+
+```{r scrap_data}
+scrape_data = function()
   {
   # desired years
   years <- seq(1999,2012,1) 
@@ -176,187 +360,15 @@ scrap_data = function()
   #update print
   print("DATA SCRAPE COMPLETE!!!")
 }
-scrap_data()
 ```
 
 
-Once all the data has been scraped, we proceed with our analysis to investigate the change in age distribution of men entering the race over time. We start by loading the csv for the Men's data the we
-scraped above and adding column names.
 
-``` {r Load men's data}
-# column names for data from site
-col_names <- c("race", 
-               "name", 
-               "age", 
-               "time", 
-               "pace", 
-               "placeInSex", 
-               "division", 
-               "placeInDivision", 
-               "hometown")
 
-# read csv of compiled Mens data
-df_all_mens <- read_csv("caseStudy04_Scraping/data/allDataMen.csv", 
-                        col_types = cols(Age = col_character()))
 
-# set the names for the df
-names(df_all_mens) <- col_names
 
-# show how many rows in total dataset
-dim(df_all_mens)
-```
 
-The data still requires some processing to be useful for our analysis. In the next code block the rows with age values of "NR" are removed. Then the age and year are cast as integers and division as a factor.
 
-``` {r Format types}
-# eliminate rows with NR for age
-df_trim <- df_all_mens[which(df_all_mens$age != "NR"),]
 
-# show how many eliminated from data
-dim(df_trim)
 
-# switch the age column from character to integer
-df_trim$age <- as.integer(df_trim$age)
-
-# this will take the race column split on whitespace, and index year data
-minus <- which(unlist(strsplit(df_trim$race, "\\s")) != "10M")
-
-# creates year column 
-df_trim$year <- as.integer(unlist(strsplit(df_trim$race, "\\s"))[minus])
-
-# turns division column into factor
-df_trim$division <- as.factor(df_trim$division)
-```
-
-
-The hometown feature requires a bit more formatting because it can contain a "city, state" combo for US runners or simply a country for international runners. The next code block splits the hometown field by the comma and when the comma is missing, it is presumed that the runner is international.
-
-For this analysis we are not interested at the state level, but we keep the state and international country data and we put both into a field called "state2".
-
-!!!!!! Jason, I'm not sure what I wrote above is accurate !!!!!
-
-
-``` {r Format state}
-extract_state = function(string)
-  {
-  tmp <- string
-  if (grepl(",", string) == "TRUE"){
-    tmp <- str_trim(strsplit(string, ",")[[1]][2])
-  }
-  return(tmp)
-}
-
-#extract_state(df_trim$hometown[900])
-
-df_trim$state2 <- unlist(lapply(df_trim$hometown, extract_state))
-
-df_trim$state <- ifelse((grepl(",", df_trim$hometown) == "TRUE"),substr(df_trim$hometown, nchar(df_trim$hometown) - 2, nchar(df_trim$hometown)), "NaS")
-
-df_trim[which(str_locate(df_trim$hometown, ",") - nchar(df_trim$hometown) != -3),]
-df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= 3),]
-
-unlist(unique(df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= 3),"hometown"]))
-```
-
-
-With the variables of interest extracted, we are create summaries of the age by year and the count of runners per division per year. We also add 0 runners for two divisions with missing data to make further analysis easier.
-
-``` {r Summary dataframes}
-# create summary dataframe by year
-df_age_stats <- df_trim %>%
-                  group_by(year) %>%
-                  summarize(
-                    mean = mean(age), 
-                    sd = sd(age),
-                    oldest = max(age),
-                    yngest = min(age),
-                    n=n(),
-                    skew = skewness(age)
-                    )
-
-# create dataframe of number of racers per division, per year
-df_div_stats <- df_trim %>%
-                  group_by(division, year) %>%
-                  summarize(
-                    n=n()
-                    )
-
-# names for above dataframe, need to add data
-div_stat_names <- c("division", "year", "n")
-
-# adding missing data
-df_row_to_add <- data.frame("M8099", 2002, 0)
-df_row_to_add2 <- data.frame("M8099", 2000, 0)
-names(df_row_to_add)<-div_stat_names
-names(df_row_to_add2)<-div_stat_names
-
-df_div_stats <- rbind(df_div_stats, df_row_to_add)
-df_div_stats <- rbind(df_div_stats, df_row_to_add2)
-```
-
-!!!!!!! This is where it errors for me !!!!!!!!!
-
-``` {r}
-df_div_stats$division <- as.factor(df_div_stats$division)
-```
-
-## Data Cleanup
-
-## Finding k-Nearest Neighbors
-
-
-
-
-## Cross Validation
-
-
-## Final Model Selection
-
-
-
-# Results
-
-## Cross Validation
-
-
-
-## Evaluating the options of $k$
-
-
-
-## Evaluating MACs
-
-
-
-## Evaluating Neighbor Strategy
-
-
-
-
-
-
-## Final Model Design
-
-
-
-
-
-
-# Conclusion
-
-
-
-# Appendix
-
-## Sources
-
-[w3schools HTML Tags: https://www.w3schools.com/tags/default.asp](https://www.w3schools.com/tags/default.asp)
-
-**Nolan, Deborah; Lang, Duncan Temple.**; *Data Science in R: A Case Studies Approach to Computational Reasoning and Problem Solving*; Chapter 2 pgs 45-103.
-
-[Cherry Blossom Race](https://www.cherryblossom.org/)
-
-[Cherry Blossom Race Database](http://www.cballtimeresults.org/performances)
-
-## Functions
 
