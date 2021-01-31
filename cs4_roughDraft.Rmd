@@ -1,0 +1,119 @@
+---
+title: "Case Study 4"
+subtitle: |
+  | Web Scraping
+  | DS7333
+author: "Jason Rupp and Indy Dhillon"
+date: "February 4, 2021"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+---
+
+```{css, echo=FALSE}
+p.caption {
+  font-size: 0.8em;
+}
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning = FALSE)
+library(tidyverse)
+library(rmarkdown)
+library(knitr)
+library(kableExtra)
+library(gridExtra)
+#source("cs4_scripts_rd.R")
+```
+
+
+
+# Introduction
+
+Web scraping can be a very powerful tool that can be used to gather data from the internet. One form of web scraping involves locating and extracting information embedded in HTML code. Several software packages have been developed to assist with web scraping, this case study will utilize two such packages that are included within the `tidyverse`, `xml2` and `rvest`. Using this technique can be a very valuable asset to a Data Scientist, as this case study will demonstrate, it can automate data collection across a number of web pages, decreasing the amount of time required to gather data for analysis.
+
+Though there are a few means by which web scraping can be accomplished, one such method involved parsing HTML, or Hyper Text Markup Language, text to find data of interest. Data on websites are typically contained within pre-defined HTML tags, a list can be found <a href = "https://www.w3schools.com/tags/default.asp"> here</a>. If there is data of interest on a website, the tag associated with the data can be located in the HTML text, and collected for analysis.
+
+Even though it can be very useful technique, there is a major pitfall associated with web scraping that can interfere with data acquisition. If the site undergoes maintenance, or if the site does a major over hall and makes several changes to the site, it is possible that the tools being used to extract data may not be effective on the changed site. In spite of this draw back, web scraping is a very effective means by which data can be acquired.
+
+The purpose of this Case Study is to utilize software to scrape data from the internet, and perform minor statistical analysis on the data acquired.
+
+# Background
+
+## Case Study Purpose
+
+This Case Study is a slight modification of an exercise found in Chapter 2 of the book "Data Science in R: A Case Studies Approach to Computational Reasoning and Problem Solving" titled *Modeling Runners’ Times in the Cherry Blossom Race*. The Cherry Blossom Race is an annual race in Washington, DC that dates back to 1973. Run times for each race have been posted online at [this website](http://www.cballtimeresults.org/performances). This chapter in the text book provides tools and detailed explanation outlining the steps of data acquisition and cleaning, however this where the methods in this Case Study and the text book will diverge. 
+
+The instructions provided in the text book were only useful prior until about January 22nd, 2021, as The Cherry Blossom changed the format of the website around this time. With the website in a completely new format, using the tools in the book will no longer be a viable means of data collection.
+
+The aim of this case study is to develop new tools to automate collection of race data from 1999-2012 with particular focus on the Mens division to perform statistical analysis on the data to answer questions of interest. 
+
+## Questions of Interest
+
+There has been an apparent trend in the age of male runners entering the Cherry Blossom Race, male runners in 1999 were typically older than those which ran the race in 2012. This case study will compare the age distribution of the runners across all 14 years of the races by using quantile-quantile plots, boxplots, density curves, and other methods to make comparisons. How have the distributions changed over the years and was it gradual? 
+
+# Methods
+
+
+
+## Data Cleanup
+
+## Finding k-Nearest Neighbors
+
+
+
+
+## Cross Validation
+
+
+## Final Model Selection
+
+
+
+# Results
+
+## Cross Validation
+
+
+
+## Evaluating the options of $k$
+
+
+
+## Evaluating MACs
+
+
+
+## Evaluating Neighbor Strategy
+
+
+
+
+
+
+## Final Model Design
+
+
+
+
+
+
+# Conclusion
+
+
+
+# Appendix
+
+## Sources
+
+[w3schools HTML Tags: https://www.w3schools.com/tags/default.asp](https://www.w3schools.com/tags/default.asp)
+
+**Nolan, Deborah; Lang, Duncan Temple.**; *Data Science in R: A Case Studies Approach to Computational Reasoning and Problem Solving*; Chapter 2 pgs 45-103.
+
+[Cherry Blossom Race](https://www.cherryblossom.org/)
+
+[Cherry Blossom Race Database](http://www.cballtimeresults.org/performances)
+
+## Functions
+
