@@ -172,28 +172,28 @@ df_trim$division <- as.factor(df_trim$division)
 
 # Trying to find state level data
 
-extract_state = function(string)
-  {
-  tmp <- string
-  if (grepl(",", string) == "TRUE"){
-    tmp <- str_trim(strsplit(string, ",")[[1]][2])
-  }
-  return(tmp)
-}
-
-extract_state(df_trim$hometown[900])
-
-df_trim$state2 <- unlist(lapply(df_trim$hometown, extract_state))
-
-
-
-df_trim$state <- ifelse((grepl(",", df_trim$hometown) == "TRUE"),substr(df_trim$hometown, nchar(df_trim$hometown) - 2, nchar(df_trim$hometown)), "NaS")
-
-
-df_trim[which(str_locate(df_trim$hometown, ",") - nchar(df_trim$hometown) != -3),]
-df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= 3),]
-
-unlist(unique(df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= 3),"hometown"]))
+#extract_state = function(string)
+#  {
+#  tmp <- string
+#  if (grepl(",", string) == "TRUE"){
+#    tmp <- str_trim(strsplit(string, ",")[[1]][2])
+#  }
+#  return(tmp)
+#}
+#
+#extract_state(df_trim$hometown[900])
+#
+#df_trim$state2 <- unlist(lapply(df_trim$hometown, extract_state))
+#
+#
+#
+#df_trim$state <- ifelse((grepl(",", df_trim$hometown) == "TRUE"),substr(df_trim$hometown, nchar(df_trim$hometown) - 2, nchar(df_trim$hometown)), "NaS")
+#
+#
+#df_trim[which(str_locate(df_trim$hometown, ",") - nchar(df_trim$hometown) != -3),]
+#df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= 3),]
+#
+#unlist(unique(df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= 3),"hometown"]))
 #~~~~~~~ EDA
 
 # create summary dataframe by year
@@ -244,14 +244,9 @@ for (i in 1:length(sort(unique(df_div_stats$division))))
          )
 }
 
-
-
-# plotts.wge(ts_M0119$n)
-
-
 # create dataframe of 1 difference for the divisions, with the year
 # used to see yearly increase to divisions and overall
-yearDifferenceByDiv <- data.frame(cbind(ts_M0119$year[2:14], 
+yearDifferenceByDiv_wide <- data.frame(cbind(ts_M0119$year[2:14], 
                               artrans.wge(ts_M0119$n, phi.tr = 1),
                               artrans.wge(ts_M2024$n, phi.tr = 1),
                               artrans.wge(ts_M2529$n, phi.tr = 1),
@@ -271,7 +266,7 @@ yearDifferenceByDiv <- data.frame(cbind(ts_M0119$year[2:14],
 # give names to above df
 names(yearDifferenceByDiv) <- c("year", unlist(as.character(sort(unique(df_div_stats$division)))), "overall")
 
-yearDifferenceByDiv <- yearDifferenceByDiv %>% gather(division, yearly_change, M0119:overall)
+yearDifferenceByDiv_long <- yearDifferenceByDiv_wide %>% gather(division, yearly_change, M0119:overall)
 
 
 
