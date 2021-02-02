@@ -22,7 +22,6 @@ p.caption {
 }
 ```
 
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning = FALSE)
 library(tidyverse)
@@ -39,8 +38,6 @@ library(changepoint)
 #source("cs4_scripts_rd.R")
 ```
 
-
-
 # Introduction
 
 Web scraping can be a very powerful tool that can be used to gather data from the internet. One form of web scraping involves locating and extracting information embedded in HTML code. Several software packages have been developed to assist with web scraping, this case study will utilize two such packages that are included within the `tidyverse`, `xml2` and `rvest`. Using this technique can be a very valuable asset to a Data Scientist, as this case study will demonstrate, it can automate data collection across a number of web pages, decreasing the amount of time required to gather data for analysis.
@@ -55,15 +52,15 @@ The purpose of this Case Study is to utilize software to scrape data from the in
 
 ## Case Study Purpose
 
-This Case Study is a slight modification of an exercise found in Chapter 2 of the book "Data Science in R: A Case Studies Approach to Computational Reasoning and Problem Solving" titled *Modeling Runners’ Times in the Cherry Blossom Race*. The Cherry Blossom Race is an annual race in Washington, DC that dates back to 1973. Run times for each race have been posted online at [this website](http://www.cballtimeresults.org/performances). This chapter in the text book provides tools and detailed explanation outlining the steps of data acquisition and cleaning, however this where the methods in this Case Study and the text book will diverge. 
+This Case Study is a slight modification of an exercise found in Chapter 2 of the book "Data Science in R: A Case Studies Approach to Computational Reasoning and Problem Solving" titled *Modeling Runners' Times in the Cherry Blossom Race*. The Cherry Blossom Race is an annual race in Washington, DC that dates back to 1973. Run times for each race have been posted online at [this website](http://www.cballtimeresults.org/performances). This chapter in the text book provides tools and detailed explanation outlining the steps of data acquisition and cleaning, however this where the methods in this Case Study and the text book will diverge.
 
 The instructions provided in the text book were only useful prior until about January 22nd, 2021, as The Cherry Blossom changed the format of the website around this time. With the website in a completely new format, using the tools in the book will no longer be a viable means of data collection.
 
-The aim of this case study is to develop new tools to automate collection of race data from 1999-2012 with particular focus on the Mens division to perform statistical analysis on the data to answer questions of interest. 
+The aim of this case study is to develop new tools to automate collection of race data from 1999-2012 with particular focus on the Mens division to perform statistical analysis on the data to answer questions of interest.
 
 ## Questions of Interest
 
-There has been an apparent trend in the age of male runners entering the Cherry Blossom Race, male runners in 1999 were typically older than those which ran the race in 2012. This case study will compare the age distribution of the runners across all 14 years of the races by using quantile-quantile plots, boxplots, density curves, and other methods to make comparisons. How have the distributions changed over the years and was it gradual? 
+There has been an apparent trend in the age of male runners entering the Cherry Blossom Race, male runners in 1999 were typically older than those which ran the race in 2012. This case study will compare the age distribution of the runners across all 14 years of the races by using quantile-quantile plots, boxplots, density curves, and other methods to make comparisons. How have the distributions changed over the years and was it gradual?
 
 # Methods
 
@@ -73,7 +70,7 @@ The accompanying code for the methods used can be found in the <a href="#functio
 
 One benefit of the new format for the Cherry Blossom website is that subsequent years have the same format for every race. What makes the new format different is that the race data results are paginated and a different call has to be made for every race, year, and gender. Even though the results are spread across several pages, the new format is far better suited to collect any range of data, as the race data for every year since the inception of the race is in the same format. The data from the site was retrieved using a series of the functions.
 
-This first function `return_dataTable()` (<a href="#function621">Function 6.2.1</a>) retrieves the table containing the data on each page, which is identified by the \<table> html tag and will return the data in a dataframe. 
+This first function `return_dataTable()` (<a href="#function621">Function 6.2.1</a>) retrieves the table containing the data on each page, which is identified by the \<table\> html tag and will return the data in a dataframe.
 
 The next function `collect_data()` (<a href="#function622">Function 6.2.2</a>) gathers all the data for a single race year from the paginated tables for an individual year-gender combo. The URL strings are built based on the year, gender, page number and first letter of gender. This url could also be modified to get results from the 5 mile Cherry Blossom Race, if desired. The first page for the year is fetched to create an initial dataframe, and to find data about that race year. Each year has a different number of pages which will be unknown without looking at each year, however what is constant is there are 20 runners displayed per page. The total number of runners is found from the `PiS/TiS` column on the first page for the year. This will be used to figure out how many pages to query then subsequent pages are queried one at a time.
 
@@ -105,7 +102,7 @@ names(df_all_mens) <- col_names
 number_of_obs_pre <- dim(df_all_mens)[1]
 ```
 
-Once all the data has been scraped, we proceed with our analysis to investigate the change in age distribution of men entering the race over time. We start by loading the csv for the Men's data scraped with functions from above and adding column names (<a href="#function6251">Data Cleaning: Read Data</a>). The initial dataset contains `r format(number_of_obs_pre, nsmall=1, big.mark=",")` observations, below is an example of the raw dataframe. 
+Once all the data has been scraped, we proceed with our analysis to investigate the change in age distribution of men entering the race over time. We start by loading the csv for the Men's data scraped with functions from above and adding column names (<a href="#function6251">Data Cleaning: Read Data</a>). The initial dataset contains `r format(number_of_obs_pre, nsmall=1, big.mark=",")` observations, below is an example of the raw dataframe.
 
 ```{r echo=FALSE}
 head(df_all_mens) %>%
@@ -136,13 +133,11 @@ df_trim$year <- as.integer(unlist(strsplit(df_trim$race, "\\s"))[minus])
 df_trim$division <- as.factor(df_trim$division)
 ```
 
-
 The raw data still requires some processing to be useful for our analysis (<a href="#function6252">Data Cleaning: Formatting</a>). Some of the column formats will be more useful as different types. One thing which was noted during data collection was that the `age` feature had to be collected as a character type. This was due to some missing data which was denoted as "NR". These rows need to be dealt with prior to analysis. One solution is to remove rows with age values of "NR", however there is a risk of data loss. Luckily in this instance eliminating the rows only results in the loss of `r total_obs_lost` rows. For 14 years of race data this is a minimal amount which is good for multiple reasons. First, no methods of imputation will be necessary, and eliminating the rows is very easy. Secondly, the data that we are interested in analyzing is the age of the racers, so having so little missing should yield an accurate portrayal. Once the "NR" rows are eliminated the age and year are cast as integers and runner division is converted to factor.
-
 
 ## POSSIBLE TO BE DROPPED FROM FINAL
 
-~~~THIS WAS EXPERIMENTAL, LET'S LEAVE OUT FOR NOW IF WE HAVE TIME OR INTEREST WE CAN COME BACK AND EDIT~~~~
+\~~~THIS WAS EXPERIMENTAL, LET'S LEAVE OUT FOR NOW IF WE HAVE TIME OR INTEREST WE CAN COME BACK AND EDIT~~\~\~
 
 The hometown feature requires a bit more formatting because it can contain a "city, state" combo for US runners or simply a country for international runners. The next code block splits the hometown field by the comma and when the comma is missing, it is presumed that the runner is international.
 
@@ -150,8 +145,7 @@ For this analysis we are not interested at the state level, but we keep the stat
 
 !!!!!! Jason, I'm not sure what I wrote above is accurate !!!!!
 
-
-``` {r FormatState, eval=FALSE, include=FALSE}
+```{r FormatState, eval=FALSE, include=FALSE}
 # extract_state = function(string)
 #   {
 #   tmp <- string
@@ -173,7 +167,7 @@ For this analysis we are not interested at the state level, but we keep the stat
 # unlist(unique(df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= # 3),"hometown"]))
 ```
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~
 
 ## Summary Statistics
 
@@ -222,7 +216,6 @@ df_div_stats$division <- as.factor(df_div_stats$division)
 df_div_stats <- df_div_stats[order(df_div_stats$division, df_div_stats$year),]
 ```
 
-
 ```{r eval=FALSE, include=FALSE}
 # loop to create individual dataframes of data for each division by year for differencing
 for (i in 1:length(sort(unique(df_div_stats$division))))
@@ -258,8 +251,7 @@ names(yearDifferenceByDiv_wide) <- c("year", unlist(as.character(sort(unique(df_
 yearDifferenceByDiv_long <- yearDifferenceByDiv_wide %>% gather(division, yearly_change, M0119:overall)
 ```
 
-
-With the variables of interest extracted, we can create summary dataframes to investigate the questions of interest (<a href="#function6261">Summary Statistics: Dataframes</a>). The dataframe `df_age_stats` was created was to show the summary statistics for the ages of the runners each year. 
+With the variables of interest extracted, we can create summary dataframes to investigate the questions of interest (<a href="#function6261">Summary Statistics: Dataframes</a>). The dataframe `df_age_stats` was created was to show the summary statistics for the ages of the runners each year.
 
 The second dataframe `df_div_stats` groups the runners into their respective divisions by year and enumerates the runners in each division. We also add 0 runners for two divisions with missing data and convert the division feature to a factor to make further analysis easier.
 
@@ -267,20 +259,49 @@ The final dataframe `yearDifferenceByDiv_wide/long` was created to examine the a
 
 ## Age Analysis
 
-With the data processing complete, the questions of interest can be answered. The Men's data was analyzed using a combination of plots and summary statistics from the dataframes created in the previous section, and results will be discussed in the subsequent section. 
-
+With the data processing complete, the questions of interest can be answered. The Men's data was analyzed using a combination of plots and summary statistics from the dataframes created in the previous section, and results will be discussed in the subsequent section.
 
 # Results
 
-## Men's Data Analysis
+## Men's Data
 
+### QQ Plots {.tabset}
+
+#### Facet Wrapped
+
+```{r}
+ggplot(data = df_trim, aes(sample = age, color = as.factor(year))) +
+  geom_qq(alpha = 0.5) +
+  stat_qq_line(alpha = 0.7, color = "red", linetype = "dashed") +
+  facet_wrap(~year)
+```
+
+#### Animated
+
+```{r cache = TRUE}
+# aniYearQQ <- ggplot(data = df_trim, aes(sample = age, color = as.factor(year))) +
+#               geom_qq(alpha = 0.5) +
+#               stat_qq_line(alpha = 0.7, color = "red", linetype = "dashed") + 
+#               labs(title = 'Year: {frame_time}', fill = "Year") +
+#               transition_time(year) 
+# 
+# animate(aniYearQQ, fps=10)
+ggplot(data = df_trim, aes(sample = age, color = as.factor(year))) +
+  geom_qq(alpha = 0.5) +
+  stat_qq_line(alpha = 0.7, color = "red", linetype = "dashed") +
+  facet_wrap(~year)
+```
+
+
+### Boxplots
+
+
+### Density Curves
 
 
 
 
 # Conclusion
-
-
 
 # Appendix
 
@@ -294,14 +315,13 @@ With the data processing complete, the questions of interest can be answered. Th
 
 [Cherry Blossom Race Database](http://www.cballtimeresults.org/performances)
 
-
 <a id="functions"></a>
 
 ## Functions
 
 <a id="function621"></a>
 
-### Fetch Datatable 
+### Fetch Datatable
 
 ```{r return_dataTable, eval=FALSE}
 return_dataTable <- function(url)
@@ -325,7 +345,7 @@ The `return_dataTable()` function puts the data that is in the HTML table on the
 
 <a id="function622"></a>
 
-### Collect Annual Data 
+### Collect Annual Data
 
 ```{r collect_data, eval = FALSE}
 collect_data <- function(year, gender)
@@ -382,7 +402,7 @@ collect_data <- function(year, gender)
 
 <a id="function623"></a>
 
-### Collect Mutli-Year Data 
+### Collect Mutli-Year Data
 
 ```{r get_all_data, eval=FALSE}
 get_all_data = function(years, gender)
@@ -435,7 +455,6 @@ scrape_data = function()
 }
 ```
 
-
 ### Data Cleaning Steps
 
 <a id="function6251"></a>
@@ -463,7 +482,6 @@ names(df_all_mens) <- col_names
 # show how many rows in total dataset
 number_of_obs <- dim(df_all_mens)[1]
 ```
-
 
 <a id="function6252"></a>
 
@@ -540,16 +558,3 @@ df_div_stats$division <- as.factor(df_div_stats$division)
 # order the data correctly chronologically
 df_div_stats <- df_div_stats[order(df_div_stats$division, df_div_stats$year),]
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
