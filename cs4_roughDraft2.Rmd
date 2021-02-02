@@ -108,7 +108,7 @@ Once all the data has been scraped, we proceed with our analysis to investigate 
 head(df_all_mens) %>%
   kbl(digits = 2, row.names = F) %>%
   kable_material(c("striped", "hover", "condensed")) %>%
-  scroll_box(width = "100%", height = "200px")
+  scroll_box(width = "100%", height = "100%")
 ```
 
 ```{r echo=FALSE}
@@ -135,39 +135,6 @@ df_trim$division <- as.factor(df_trim$division)
 
 The raw data still requires some processing to be useful for our analysis (<a href="#function6252">Data Cleaning: Formatting</a>). Some of the column formats will be more useful as different types. One thing which was noted during data collection was that the `age` feature had to be collected as a character type. This was due to some missing data which was denoted as "NR". These rows need to be dealt with prior to analysis. One solution is to remove rows with age values of "NR", however there is a risk of data loss. Luckily in this instance eliminating the rows only results in the loss of `r total_obs_lost` rows. For 14 years of race data this is a minimal amount which is good for multiple reasons. First, no methods of imputation will be necessary, and eliminating the rows is very easy. Secondly, the data that we are interested in analyzing is the age of the racers, so having so little missing should yield an accurate portrayal. Once the "NR" rows are eliminated the age and year are cast as integers and runner division is converted to factor.
 
-## POSSIBLE TO BE DROPPED FROM FINAL
-
-\~~~THIS WAS EXPERIMENTAL, LET'S LEAVE OUT FOR NOW IF WE HAVE TIME OR INTEREST WE CAN COME BACK AND EDIT~~\~\~
-
-The hometown feature requires a bit more formatting because it can contain a "city, state" combo for US runners or simply a country for international runners. The next code block splits the hometown field by the comma and when the comma is missing, it is presumed that the runner is international.
-
-For this analysis we are not interested at the state level, but we keep the state and international country data and we put both into a field called "state2".
-
-!!!!!! Jason, I'm not sure what I wrote above is accurate !!!!!
-
-```{r FormatState, eval=FALSE, include=FALSE}
-# extract_state = function(string)
-#   {
-#   tmp <- string
-#   if (grepl(",", string) == "TRUE"){
-#     tmp <- str_trim(strsplit(string, ",")[[1]][2])
-#   }
-#   return(tmp)
-# }
-# 
-# #extract_state(df_trim$hometown[900])
-# 
-# df_trim$state2 <- unlist(lapply(df_trim$hometown, extract_state))
-# 
-# df_trim$state <- ifelse((grepl(",", df_trim$hometown) == "TRUE"),substr(df_trim$hometown, # nchar(df_trim$hometown) - 2, nchar(df_trim$hometown)), "NaS")
-# 
-# df_trim[which(str_locate(df_trim$hometown, ",") - nchar(df_trim$hometown) != -3),]
-# df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= 3),]
-# 
-# unlist(unique(df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= # 3),"hometown"]))
-```
-
-\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~
 
 ## Summary Statistics
 
@@ -263,41 +230,177 @@ With the data processing complete, the questions of interest can be answered. Th
 
 # Results
 
-## Men's Data
+## QQ Plots {.tabset}
 
-### QQ Plots {.tabset}
+### Facet Wrapped
 
-#### Facet Wrapped
-
-```{r}
+```{r echo=FALSE, fig.width=9, fig.height=9, fig.cap= "**Figure 4.1.1** QQ-plots for mens ages 1999-2012 (CLICK ON PLOT TO ENLARGE)"}
 ggplot(data = df_trim, aes(sample = age, color = as.factor(year))) +
   geom_qq(alpha = 0.5) +
   stat_qq_line(alpha = 0.7, color = "red", linetype = "dashed") +
-  facet_wrap(~year)
+  facet_wrap(~year) +
+  labs(title = "Distribution of Mens Age", subtitle = "Cherry Blossom Race, 1999-2012", x = "Theoretical", y = "Sample", color = "Year")
 ```
 
-#### Animated
+### Animated
 
-```{r cache = TRUE}
-# aniYearQQ <- ggplot(data = df_trim, aes(sample = age, color = as.factor(year))) +
-#               geom_qq(alpha = 0.5) +
-#               stat_qq_line(alpha = 0.7, color = "red", linetype = "dashed") + 
-#               labs(title = 'Year: {frame_time}', fill = "Year") +
-#               transition_time(year) 
-# 
-# animate(aniYearQQ, fps=10)
-ggplot(data = df_trim, aes(sample = age, color = as.factor(year))) +
-  geom_qq(alpha = 0.5) +
-  stat_qq_line(alpha = 0.7, color = "red", linetype = "dashed") +
-  facet_wrap(~year)
+```{r echo=FALSE, cache=FALSE, fig.width=9, fig.height=12, fig.cap="**Figure 4.1.2** Animated QQ-plots for mens ages 1999-2012  (CLICK ON PLOT TO ENLARGE)"}
+aniYearQQ <- ggplot(data = df_trim, aes(sample = age, color = as.factor(year))) +
+              geom_qq(alpha = 0.5) +
+              stat_qq_line(alpha = 0.7, color = "red", linetype = "dashed") + 
+              labs(title = 'QQ-Plot for {frame_time}', 
+                   subtitle = "Cherry Blossom Race", 
+                   x = "Theoretical", 
+                   y = "Sample", 
+                   color = "Year") +
+              transition_time(year)
+              
+
+animate(aniYearQQ, fps=10)
+# ggplot(data = df_trim, aes(sample = age, color = as.factor(year))) +
+#   geom_qq(alpha = 0.5) +
+#   stat_qq_line(alpha = 0.7, color = "red", linetype = "dashed") +
+#   facet_wrap(~year)
 ```
 
 
-### Boxplots
+## Boxplots {.tabset}
+
+### All Boxplots
+
+```{r echo=FALSE, fig.width=9, fig.height=11, fig.cap= "**Figure 4.2.1** Boxplots of mens ages 1999-2012 (CLICK ON PLOT TO ENLARGE)"}
+
+df_trim %>%
+  ggplot() +
+  geom_boxplot(
+    aes(x = as.factor(year),
+        y = age,
+        fill = as.factor(year)), 
+    alpha = 0.5)+
+  theme(
+    axis.text.x = element_text(angle = 30),
+    legend.position = 'none'
+  ) +
+  labs(title = "Mens Runners", subtitle = "Cherry Blossom Race, 1999-2012", xlab = "Year", ylab = "Age")
+
+# ggplot(data = df_trim, aes(sample = age, color = as.factor(year))) +
+#   geom_qq(alpha = 0.5) +
+#   stat_qq_line(alpha = 0.7, color = "red", linetype = "dashed") +
+#   facet_wrap(~year) +
+#   labs(title = "Distribution of Mens Age", subtitle = "Cherry Blossom Race, 1999-2012", xlab = # "Theoretical", ylab = "Sample", color = "Year")
+```
+
+### Animated
+
+```{r echo=FALSE, cache=TRUE, fig.width=9, fig.cap="**Figure 4.2.2** Animated Boxplot of mens ages 1999-2012  (CLICK ON PLOT TO ENLARGE)"}
+
+aniYearBox <- df_trim %>%
+                ggplot() +
+                geom_boxplot(
+                  aes(y = age,
+                      fill = as.factor(year)), 
+                  alpha = 0.5, width=0.4)+
+                theme(
+                  axis.text.x = element_blank(),
+                  legend.position = 'none'
+                )+ 
+                labs(title = 'Men Runners from {frame_time}', 
+                   subtitle = "Cherry Blossom Race",
+                   fill = "Year", 
+                   x = "Year", 
+                   y = "Age" ) +
+                xlim(-0.4,0.4) +
+                transition_time(year)  
+
+animate(aniYearBox, fps=15)
+
+```
 
 
-### Density Curves
+## Density Curves {.tabset}
 
+### Overlaid
+
+```{r echo=FALSE, fig.width=9, fig.height=11, fig.cap= "**Figure 4.3.1** Overlaid Density Curves, mens ages 1999-2012 (CLICK ON PLOT TO ENLARGE)"}
+
+df_trim %>%
+ ggplot() +
+ geom_density(
+   aes(x = age, fill = as.factor(year)), 
+   alpha = 0.4) + 
+ labs(title = "Mens Runners Ages", 
+      subtitle = "Cherry Blossom Race, 1999-2012", 
+      fill = "Year", 
+      x = "Age", 
+      y = "Density") 
+```
+
+### Animated
+
+```{r echo=FALSE, cache=TRUE, fig.width=9, fig.cap="**Figure 4.3.2** Animated Distributions of mens ages, 1999-2012  (CLICK ON PLOT TO ENLARGE)"}
+
+aniYearDens <- df_trim %>%
+                ggplot() +
+                geom_density(
+                  aes(x = age, fill = as.factor(year)), 
+                  alpha = 0.5) +
+                theme(
+                  legend.position = 'none'
+                )+  
+                labs(title = 'Mens Age Distribution for {frame_time}', 
+                     fill = "Year", 
+                     x = "Age", 
+                     y = "Density") +
+                transition_time(year) 
+
+animate(aniYearDens, fps=15)
+
+```
+
+## Histograms {.tabset}
+
+### Facet Wrapped
+
+```{r echo=FALSE, fig.width=9, fig.height=9, fig.cap= "**Figure 4.4.1** Histograms for men entrants, 1999-2012 (CLICK ON PLOT TO ENLARGE)"}
+df_trim %>%
+  ggplot() +
+  geom_histogram(
+    aes(x = age,
+        y = ..count..,
+        fill = as.factor(year)), 
+    alpha = 0.5) +
+  facet_wrap(~year) +
+  labs(title = "Distribution of Mens Age", 
+       subtitle = "Cherry Blossom Race, 1999-2012", 
+       x = "Age", 
+       y = "Count", 
+       fill = "Year")
+```
+
+### Animated
+
+```{r echo=FALSE, cache=FALSE, fig.width=9, fig.height=12, fig.cap="**Figure 4.4.2** Animated Histograms for men entrants, 1999-2012  (CLICK ON PLOT TO ENLARGE)"}
+
+aniYearHistCount <- df_trim %>%
+                      ggplot() +
+                      geom_histogram(
+                        aes(x = age,
+                            y = ..count..,
+                            fill = as.factor(year)), 
+                        alpha = 0.4,
+                        bins = 30) +
+                      theme(
+                        legend.position = 'none'
+                      )+  
+                      labs(title = 'Number of Entrants in {frame_time}', 
+                           subtitle = "Cherry Blossom Race", 
+                           x = "Age", 
+                           y = "Count", 
+                           fill = "Year") +
+                      transition_time(year) 
+
+animate(aniYearHistCount, fps=15)
+```
 
 
 
@@ -558,3 +661,39 @@ df_div_stats$division <- as.factor(df_div_stats$division)
 # order the data correctly chronologically
 df_div_stats <- df_div_stats[order(df_div_stats$division, df_div_stats$year),]
 ```
+
+
+
+## Further Studies
+
+\~~~THIS WAS EXPERIMENTAL, LET'S LEAVE OUT FOR NOW IF WE HAVE TIME OR INTEREST WE CAN COME BACK AND EDIT~~\~\~
+
+The hometown feature requires a bit more formatting because it can contain a "city, state" combo for US runners or simply a country for international runners. The next code block splits the hometown field by the comma and when the comma is missing, it is presumed that the runner is international.
+
+For this analysis we are not interested at the state level, but we keep the state and international country data and we put both into a field called "state2".
+
+!!!!!! Jason, I'm not sure what I wrote above is accurate !!!!!
+
+```{r FormatState, eval=FALSE, include=FALSE}
+# extract_state = function(string)
+#   {
+#   tmp <- string
+#   if (grepl(",", string) == "TRUE"){
+#     tmp <- str_trim(strsplit(string, ",")[[1]][2])
+#   }
+#   return(tmp)
+# }
+# 
+# #extract_state(df_trim$hometown[900])
+# 
+# df_trim$state2 <- unlist(lapply(df_trim$hometown, extract_state))
+# 
+# df_trim$state <- ifelse((grepl(",", df_trim$hometown) == "TRUE"),substr(df_trim$hometown, # nchar(df_trim$hometown) - 2, nchar(df_trim$hometown)), "NaS")
+# 
+# df_trim[which(str_locate(df_trim$hometown, ",") - nchar(df_trim$hometown) != -3),]
+# df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= 3),]
+# 
+# unlist(unique(df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= # 3),"hometown"]))
+```
+
+
