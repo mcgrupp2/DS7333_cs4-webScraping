@@ -20,6 +20,10 @@ pkgdown:
 p.caption {
   font-size: 0.8em;
 }
+
+table.caption {
+  font-size: 0.8em;
+}
 ```
 
 ```{r setup, include=FALSE}
@@ -102,11 +106,11 @@ names(df_all_mens) <- col_names
 number_of_obs_pre <- dim(df_all_mens)[1]
 ```
 
-Once all the data has been scraped, we proceed with our analysis to investigate the change in age distribution of men entering the race over time. We start by loading the csv for the Men's data scraped with functions from above and adding column names (<a href="#function6251">Data Cleaning: Read Data</a>). The initial dataset contains `r format(number_of_obs_pre, nsmall=1, big.mark=",")` observations, below is an example of the raw dataframe.
+Once all the data has been scraped, we proceed with our analysis to investigate the change in age distribution of men entering the race over time. We start by loading the csv for the Men's data scraped with functions from above and adding column names (<a href="#function6251">Data Cleaning: Read Data</a>). The initial dataset contains `r format(number_of_obs_pre, nsmall=1, big.mark=",")` observations, below in Table 3.2.1 is an example of the raw dataframe.
 
 ```{r echo=FALSE}
 head(df_all_mens) %>%
-  kbl(digits = 2, row.names = F) %>%
+  kbl(digits = 2, row.names = F, caption = "Table 3.2.1: Example of Mens Data File") %>%
   kable_material(c("striped", "hover", "condensed")) %>%
   scroll_box(width = "100%", height = "100%")
 ```
@@ -183,7 +187,7 @@ df_div_stats$division <- as.factor(df_div_stats$division)
 df_div_stats <- df_div_stats[order(df_div_stats$division, df_div_stats$year),]
 ```
 
-```{r eval=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 # loop to create individual dataframes of data for each division by year for differencing
 for (i in 1:length(sort(unique(df_div_stats$division))))
 {
@@ -218,7 +222,7 @@ names(yearDifferenceByDiv_wide) <- c("year", unlist(as.character(sort(unique(df_
 yearDifferenceByDiv_long <- yearDifferenceByDiv_wide %>% gather(division, yearly_change, M0119:overall)
 ```
 
-With the variables of interest extracted, we can create summary dataframes to investigate the questions of interest (<a href="#function6261">Summary Statistics: Dataframes</a>). The dataframe `df_age_stats` was created was to show the summary statistics for the ages of the runners each year.
+With the variables of interest extracted, we can create summary dataframes to investigate the questions of interest (<a href="#function6261">Summary Dataframes</a>). The dataframe `df_age_stats` was created was to show the summary statistics for the ages of the runners each year.
 
 The second dataframe `df_div_stats` groups the runners into their respective divisions by year and enumerates the runners in each division. We also add 0 runners for two divisions with missing data and convert the division feature to a factor to make further analysis easier.
 
@@ -226,15 +230,51 @@ The final dataframe `yearDifferenceByDiv_wide/long` was created to examine the a
 
 ## Age Analysis
 
-With the data processing complete, the questions of interest can be answered. The Men's data was analyzed using a combination of plots and summary statistics from the dataframes created in the previous section, and results will be discussed in the subsequent section.
+With the data processing complete, the questions of interest can be answered. The Men's data was analyzed using a combination of plots and summary statistics from the dataframes created in the previous section, and results will be discussed in the subsequent section. 
+
+Additionally, the mean ages of men will be examined for change points (<a href="#function627">Changpoints</a>) with the `changepoint` package. A change point can be described as a point in time where the mean of the data changes for some reason. Change points will be located for with two different methods, the "AMOC" or At Most One Change method and Binary segmentation. The first method will search the data for one change in mean, and the second will continuously divide the data in half and compare the mean of each until a difference is found.
 
 # Results
 
-## QQ Plots {.tabset}
+## Summary Statistics for Men's Data
+
+```{r echo = FALSE}
+
+age_stats_cols <- c("Race Year",
+                    "Mean Age",
+                    "Std Dev.",
+                    "Oldest",
+                    "Youngest",
+                    "Total Runners")
+
+
+df_age_stats[,c(1:6)] %>%
+  kbl(digits = 2, row.names = F, col.names = age_stats_cols, caption = "Table 4.1.1: Age Statistics, Mens Data 1999-2012" ) %>%
+  kable_material(c("striped", "hover", "condensed")) %>%
+  column_spec(2, color = spec_color(df_age_stats$mean, option = "C", end = 0.8)) %>%
+  column_spec(6, color = spec_color(df_age_stats$n, option = "C", end = 0.8)) %>%
+  scroll_box(width = "100%", height = "100%")
+
+youngest_racer <- df_trim[which(df_trim$age == min(df_trim$age)), ]
+```
+
+Table 4.1.1 above show the summary statistics for the race years of interest for the Men runners. There are several things of note. The question of interest is in regard to the mean age of the male competitors and this table shows how the mean age has changed. The mean age of the male competitors in 1999 is around 40 years old. Fourteen race years later in 2012 the mean is around 37 years old. There is clearly a shift to a younger population of racers though the standard deviation seems to be remaining fairly constant. 
+
+Another thing to note is the increase in the number of racers. It seems like the shift toward the younger population is accompanied by an increase in the number of runners, this will be expanded upon later in the results section.
+
+The last thing that is quite interesting is the youngest racer to ever to have supposed to have raced. It seems in 2002 that there was a competitor that was 4 years old for the 10 mile race. This seems rather suspect, though further investigation of this data point did show the runner to be in the `r substr(youngest_racer$division, 1, 5)` division which would support that this data point is true. What is somewhat unbelievable is that this 4 year old supposedly ran 10 miles in `r youngest_racer$time` and got `r substr(youngest_racer$placeInDivision, 1, 1)`th place in his division!!! Doesn't seem likely though possible. 
+
+## QQ Plots {.tabset .tabset-pills .tabset-fade}
+
+Figure 4.2.1 below, displaying all of the QQ-plots which sampled the ages for each year of the race. This plot does little to answer the question of interest regarding ages. It isn't very clear how the distribution of ages progresses over the time frame of interest. What is consistent is that all of the graphs have a very similar shape, the first quarter to half of all of the curves have a very unique shape. This shape indicates that there could be a right skew in the distribution of ages.
+
+Figure 4.2.2 shows the QQ-plots in an animated manor. This overlaying of the graphs makes it a little easier to see the movement in the distribution as the years progress. It is a little easier to see the movement in the distribution that around 2005, or 2006 there seems to be a marked movement of the slope in the positive direction. This indicates that there may be a movement toward a more right skewed distribution. 
+
+Both depictions of the QQ-plots seem to indicate that the data is having a tendency to lead to a more right skewed distribution of the ages of men. This type of behavior would lead to a decrease in the mean age of a racer in each year. 
 
 ### Facet Wrapped
 
-```{r echo=FALSE, fig.width=9, fig.height=9, fig.cap= "**Figure 4.1.1** QQ-plots for mens ages 1999-2012 (CLICK ON PLOT TO ENLARGE)"}
+```{r echo=FALSE, fig.width=9, fig.height=9, fig.cap= "**Figure 4.2.1** QQ-plots for mens ages 1999-2012 (CLICK ON PLOT TO ENLARGE)"}
 ggplot(data = df_trim, aes(sample = age, color = as.factor(year))) +
   geom_qq(alpha = 0.5) +
   stat_qq_line(alpha = 0.7, color = "red", linetype = "dashed") +
@@ -244,7 +284,7 @@ ggplot(data = df_trim, aes(sample = age, color = as.factor(year))) +
 
 ### Animated
 
-```{r echo=FALSE, cache=FALSE, fig.width=9, fig.height=12, fig.cap="**Figure 4.1.2** Animated QQ-plots for mens ages 1999-2012  (CLICK ON PLOT TO ENLARGE)"}
+```{r echo=FALSE, fig.width=9, fig.height=6,  fig.cap="**Figure 4.2.2** Animated QQ-plots for mens ages 1999-2012  (CLICK ON PLOT TO ENLARGE)"}
 aniYearQQ <- ggplot(data = df_trim, aes(sample = age, color = as.factor(year))) +
               geom_qq(alpha = 0.5) +
               stat_qq_line(alpha = 0.7, color = "red", linetype = "dashed") + 
@@ -264,11 +304,16 @@ animate(aniYearQQ, fps=10)
 ```
 
 
-## Boxplots {.tabset}
+
+## Boxplots {.tabset .tabset-pills .tabset-fade}
+
+In both Figure 4.3.1 and Figure 4.3.2 below, show boxplots displaying the age of the men entrants for every year. It is very easy to see the shifting mean trend toward younger runners. There is clearly a difference in the mean age between 1999 and 2012, and these plots really display that the shift was gradual from about 40 to 37. 
+
+These plots are very useful for showing the yearly movement in the mean age of mens runners, though they fall a little short with truly expressing the yearly differences of the distribution of ages.
 
 ### All Boxplots
 
-```{r echo=FALSE, fig.width=9, fig.height=11, fig.cap= "**Figure 4.2.1** Boxplots of mens ages 1999-2012 (CLICK ON PLOT TO ENLARGE)"}
+```{r echo=FALSE, fig.width=9, fig.height=6, fig.cap= "**Figure 4.3.1** Boxplots of mens ages 1999-2012 (CLICK ON PLOT TO ENLARGE)"}
 
 df_trim %>%
   ggplot() +
@@ -292,14 +337,14 @@ df_trim %>%
 
 ### Animated
 
-```{r echo=FALSE, cache=TRUE, fig.width=9, fig.cap="**Figure 4.2.2** Animated Boxplot of mens ages 1999-2012  (CLICK ON PLOT TO ENLARGE)"}
+```{r echo=FALSE, fig.width=9, fig.height=6, fig.cap="**Figure 4.3.2** Animated Boxplot of mens ages 1999-2012  (CLICK ON PLOT TO ENLARGE)"}
 
 aniYearBox <- df_trim %>%
                 ggplot() +
                 geom_boxplot(
                   aes(y = age,
                       fill = as.factor(year)), 
-                  alpha = 0.5, width=0.4)+
+                  alpha = 0.5, width=0.2)+
                 theme(
                   axis.text.x = element_blank(),
                   legend.position = 'none'
@@ -317,11 +362,16 @@ animate(aniYearBox, fps=15)
 ```
 
 
-## Density Curves {.tabset}
+
+## Density Curves {.tabset .tabset-pills .tabset-fade}
+
+Figure 4.4.1 and Figure 4.4.2 below, also show the movement in the ages toward a right skewed distribution very well. Figure 4.4.1 with overlaid density curves, the most recent 4 or 5 races show a completely different shape. The majority of racers enrolling in the later years of this range are younger. This is consistent with the movement shown in the QQ-plots and Boxplots above. 
+
+The animated Figure 4.4.2 really highlights the shift in the distribution of the racer age is gradual. The curves really start to spike toward the end. 
 
 ### Overlaid
 
-```{r echo=FALSE, fig.width=9, fig.height=11, fig.cap= "**Figure 4.3.1** Overlaid Density Curves, mens ages 1999-2012 (CLICK ON PLOT TO ENLARGE)"}
+```{r echo=FALSE, fig.width=9, fig.height=6, fig.cap= "**Figure 4.4.1** Overlaid Density Curves, mens ages 1999-2012 (CLICK ON PLOT TO ENLARGE)"}
 
 df_trim %>%
  ggplot() +
@@ -337,7 +387,7 @@ df_trim %>%
 
 ### Animated
 
-```{r echo=FALSE, cache=TRUE, fig.width=9, fig.cap="**Figure 4.3.2** Animated Distributions of mens ages, 1999-2012  (CLICK ON PLOT TO ENLARGE)"}
+```{r echo=FALSE, fig.width=9, fig.height=6, fig.cap="**Figure 4.4.2** Animated Distributions of mens ages, 1999-2012  (CLICK ON PLOT TO ENLARGE)"}
 
 aniYearDens <- df_trim %>%
                 ggplot() +
@@ -357,11 +407,18 @@ animate(aniYearDens, fps=15)
 
 ```
 
-## Histograms {.tabset}
+
+## Histograms {.tabset .tabset-pills .tabset-fade}
+
+Figure 4.5.1 and Figure 4.5.2 below, naturally highlight a similar theme as the density curves of a definitive shift in the age of a majority of the entrants. Figure 4.5.1 shows that in the early years of this range from 1999-2005, there isn't a big change year over year. Each of these curves have a similar shape with a little, but noticeable growth in the overall total number of annual runners.
+
+Around 2006 there is more noticeable annual growth, particularly with the number of younger racers. This trend continues with for the remainder of years. These figures are very telling about how the distribution is changing. It seems like there are just *more* younger men entering the races as this range of years progress. This increase in younger runners is quite noticeable, as this increase is certainly the reason for the shift in the mean from 1999-2012. 
+
+It appears as though there is annual growth for **all** age groups, however growth in the younger age groups are more apparent. The next section will expand upon this notion and further examine the yearly growth of the divisions.
 
 ### Facet Wrapped
 
-```{r echo=FALSE, fig.width=9, fig.height=9, fig.cap= "**Figure 4.4.1** Histograms for men entrants, 1999-2012 (CLICK ON PLOT TO ENLARGE)"}
+```{r echo=FALSE, fig.width=9, fig.height=9, fig.cap= "**Figure 4.5.1** Histograms for men entrants, 1999-2012 (CLICK ON PLOT TO ENLARGE)"}
 df_trim %>%
   ggplot() +
   geom_histogram(
@@ -379,7 +436,7 @@ df_trim %>%
 
 ### Animated
 
-```{r echo=FALSE, cache=FALSE, fig.width=9, fig.height=12, fig.cap="**Figure 4.4.2** Animated Histograms for men entrants, 1999-2012  (CLICK ON PLOT TO ENLARGE)"}
+```{r echo=FALSE, fig.width=9, fig.height=6, fig.cap="**Figure 4.5.2** Animated Histograms for men entrants, 1999-2012  (CLICK ON PLOT TO ENLARGE)"}
 
 aniYearHistCount <- df_trim %>%
                       ggplot() +
@@ -391,7 +448,7 @@ aniYearHistCount <- df_trim %>%
                         bins = 30) +
                       theme(
                         legend.position = 'none'
-                      )+  
+                      ) +  
                       labs(title = 'Number of Entrants in {frame_time}', 
                            subtitle = "Cherry Blossom Race", 
                            x = "Age", 
@@ -403,20 +460,117 @@ animate(aniYearHistCount, fps=15)
 ```
 
 
+## Annual Growth of Race {.tabset .tabset-pills .tabset-fade}
+
+The proceeding plots are being displayed to really highlight the annual growth of the race over this range of years in the Mens division. Figure 4.6.1 shows the raw number of competitors, some aspects provide reinforcement what was seen in the histograms. There seems to be a large jump in runners from 2005 to 2006.
+
+Figure 4.6.2 below shows difference in the number of annual competitor from year to year. This was found by taking the first difference with the `artrans.wge()` function. The increase in number of runners between the years 2005 and 2006 represent the largest increase between any year with large gains in 2008 and 2009 as well.
+
+Figure 4.6.3 shows the increase in competitors at the division level. This really breaks down where the influx of new runners are registering. As expected, the biggest annual increases for the race are coming in the M2529 and M3035, especially in the years identified above as major growth years. These runners are driving the mean age of the male runner down.
+
+### Total Number
+
+```{r echo=FALSE, fig.width=9, fig.height=6, fig.cap="**Figure 4.6.1** Number of men runners, 1999-2012  (CLICK ON PLOT TO ENLARGE)"}
+# Shows the number of entrants per year
+df_age_stats %>%
+  ggplot() +
+  geom_bar(aes(x = as.factor(year),
+               y = n,
+               fill = as.factor(year)),
+           stat = "identity",
+           alpha = 0.6) +
+  theme(
+    axis.text.x = element_text(angle = 30)
+  ) +  
+  labs(title = 'Annual Growth of Mens Entries', 
+       subtitle = "Cherry Blossom Race", 
+       x = "Year", 
+       y = "Count", 
+       fill = "Year")
+```
+
+### Yearly Change
+
+```{r echo=FALSE, fig.width=9, fig.height=6, fig.cap="**Figure 4.6.2** Yearly difference in total enrollment of men runners, 1999-2012  (CLICK ON PLOT TO ENLARGE)"}
+yearDifferenceByDiv_long %>%
+  filter(division == "overall") %>%
+  ggplot()+
+  geom_bar(aes(x = as.factor(year), y = yearly_change, fill = yearly_change), stat='identity') +
+  scale_fill_gradient2(low = "red", mid = "gold", high = "green", midpoint = 350) +
+  ylim(-1000,1000) +  
+  labs(title = 'Annual Difference in Mens Entries', 
+       subtitle = "Cherry Blossom Race", 
+       x = "Year", 
+       y = "Difference", 
+       fill = "Difference")
+
+
+```
+
+
+### Yearly Change by Division
+
+```{r echo=FALSE, fig.width=9, fig.height=14, fig.cap="**Figure 4.6.3** Yearly difference in divisional enrollment of men runners, 1999-2012  (CLICK ON PLOT TO ENLARGE)"}
+yearDifferenceByDiv_long %>%
+  filter(division != "overall") %>%
+  ggplot()+
+  geom_bar(aes(x = as.factor(year), y = yearly_change, fill = yearly_change), stat='identity') +
+  scale_fill_gradient2(low = "red", mid = "gold", high = "green", midpoint = 100) +
+  facet_wrap(~division, nrow = 7)
+
+```
+
+## Changepoint Analysis
+
+```{r echo=FALSE}
+m.amoc <- cpt.mean(df_age_stats$mean, penalty = "SIC")
+
+cpts(m.amoc)
+
+m.binseg <- cpt.mean(df_age_stats$mean, method = "BinSeg")
+
+cpts(m.binseg)
+```
+
+Figure 5.1 below shows the mean ages of the runners over the course of the years of interest. The last statistical method employed on this dataset was examining the data for possible change points in the mean of the data. The `changepoint` package was used with two seperate methods of analysis, the "AMOC" or At Most One Change method and Binary segmentation.
+
+```{r echo=FALSE, fig.width=9, fig.cap="**Figure 5.1** Annual Mean in male runners, 1999-2012  (CLICK ON PLOT TO ENLARGE)"}
+df_age_stats %>%
+  ggplot() +
+  geom_point(aes(x = as.factor(year), 
+                 y = mean, 
+                 color=as.factor(year)), 
+             size = 5)
+
+```
+
+Both methods of analysis yielded the same change in mean. Each identified `r unique(df_trim$year)[cpts(m.amoc)]` as the year where the mean in age shifted. This really ties together the trends seen with the plots above, to add some evidence about the data above. The increase in young runners seen between the 2005-2006 had an effect on the mean, which was detected with the `changepoint` package functions. One cavet is that both function were only to locate 1 changepoint. The binary segmentation method *could* locate more change points, but if the restrictions are too relaxed, it will identify every change in the data, which isn't useful.
+
+## Summary
+
+There is a very evident shift in the mean ages over this time span, and the shift appears to be gradual. The distribution of the age of men competitors over the course of these years tends to shift more to the right. This shift to a right skew is cause by a large increase in men into the younger divisions and this leads to the mean age being driven down. Changepoint analysis of the time series found there to be a change in the mean age of the competitors to be in 2006, which is the midpoint of the data. Because the midpoint was identified as the change, this would seem to provide evidence that this change was gradual. 
+
+What shouldn't go unnoticed however is that it is a though mean age is shifting younger, this isn't due to older runners losing interest and not competing in the race. The enrollment for the older runners remains very consistent throughout the entirity of the data set. The cause of the mean shift is due to the large influx of young runners, the reasons for which could be many.
 
 # Conclusion
+
+This was another very excellent exercise. The fact that the website had changed made it slightly more of a challenge, but the new website is actually much easier to scrape. It is improved in that each year is in a consistent format. In the asyncronous videos and textbook, there was far more involved with cleaning and formatting the data between the different years. Having an unpredictable annual format is very challenging to automating the scraping process, however this new format seems to alleviated this issue. A draw back is that the process takes longer. Results were only 20 to a page, so roughly 3500 web pages had to be hit to gather *just* the mens data for this time span, with the original format this number was far less.
+
+This was also a great exercise because it showed the duality of web scraping. It is a fantastically powerful way to gather openly available data, but seemingly overnight it can be rendered useless. This case study showed that in the world of data science, one needs to be very flexible and adaptable to different situations, because technology is constantly changing and evolving.
 
 # Appendix
 
 ## Sources
 
-[w3schools HTML Tags: https://www.w3schools.com/tags/default.asp](https://www.w3schools.com/tags/default.asp)
+[*w3schools HTML Tags*: https://www.w3schools.com/tags/default.asp](https://www.w3schools.com/tags/default.asp)
 
 **Nolan, Deborah; Lang, Duncan Temple.**; *Data Science in R: A Case Studies Approach to Computational Reasoning and Problem Solving*; Chapter 2 pgs 45-103.
 
 [Cherry Blossom Race](https://www.cherryblossom.org/)
 
 [Cherry Blossom Race Database](http://www.cballtimeresults.org/performances)
+
+[changepoint package](https://www.jstatsoft.org/article/view/v058i03)
 
 <a id="functions"></a>
 
@@ -610,11 +764,9 @@ df_trim$year <- as.integer(unlist(strsplit(df_trim$race, "\\s"))[minus])
 df_trim$division <- as.factor(df_trim$division)
 ```
 
-### Summary Statistics
+### Summary Dataframes
 
 <a id="function6261"></a>
-
-#### Dataframes
 
 ```{r eval=FALSE}
 # create summary dataframe by year
@@ -661,6 +813,21 @@ df_div_stats$division <- as.factor(df_div_stats$division)
 # order the data correctly chronologically
 df_div_stats <- df_div_stats[order(df_div_stats$division, df_div_stats$year),]
 ```
+
+<a id="function627"></a>
+
+### Changepoint
+
+```{r}
+m.amoc <- cpt.mean(df_age_stats$mean, penalty = "SIC")
+
+cpts(m.amoc)
+
+m.binseg <- cpt.mean(df_age_stats$mean, method = "BinSeg")
+
+cpts(m.binseg)
+```
+
 
 
 
