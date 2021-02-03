@@ -181,7 +181,7 @@ df_div_stats <- rbind(df_div_stats, df_row_to_add2)
 ## making one of the dataframes the first run so maybe that might have been it
 
 # turn divisons into factors
-df_div_stats$division <- as.factor(df_div_stats$division)
+# df_div_stats$division <- as.factor(df_div_stats$division)
 
 # order the data correctly chronologically
 df_div_stats <- df_div_stats[order(df_div_stats$division, df_div_stats$year),]
@@ -525,11 +525,7 @@ yearDifferenceByDiv_long %>%
 ```{r echo=FALSE}
 m.amoc <- cpt.mean(df_age_stats$mean, penalty = "SIC")
 
-cpts(m.amoc)
-
 m.binseg <- cpt.mean(df_age_stats$mean, method = "BinSeg")
-
-cpts(m.binseg)
 ```
 
 Figure 5.1 below shows the mean ages of the runners over the course of the years of interest. The last statistical method employed on this dataset was examining the data for possible change points in the mean of the data. The `changepoint` package was used with two seperate methods of analysis, the "AMOC" or At Most One Change method and Binary segmentation.
@@ -540,7 +536,7 @@ df_age_stats %>%
   geom_point(aes(x = as.factor(year), 
                  y = mean, 
                  color=as.factor(year)), 
-             size = 5)
+             size = 3)
 
 ```
 
