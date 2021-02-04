@@ -552,6 +552,10 @@ What shouldn't go unnoticed however is that it is a though mean age is shifting 
 
 This was another very excellent exercise. The fact that the website had changed made it slightly more of a challenge, but the new website is actually much easier to scrape. It is improved in that each year is in a consistent format. In the asyncronous videos and textbook, there was far more involved with cleaning and formatting the data between the different years. Having an unpredictable annual format is very challenging to automating the scraping process, however this new format seems to alleviated this issue. A draw back is that the process takes longer. Results were only 20 to a page, so roughly 3500 web pages had to be hit to gather *just* the mens data for this time span, with the original format this number was far less.
 
+Even still with the increased data acquisition time, it was balanced out a bit with less time required for cleaning data. This exercise was a great tool for data collection. Hopefully it is understandable that this case study included both web scraping and analysis. It was quite anticlimactic to invest work in scraping so much data and then *not* do any type of analysis. Even seeing how this race has changed over time was a very interesting exercise. 
+
+Analysis of this data lead to further questions which could be answered if time had permitted additional studies. One topic of interest was to analyze the `hometown` feature in greater depth. It would be interesting to investigate where the racers are from? Is the annual growth of the race from runners in the US, or has this race attracted the attention of international runners? A function (<a href="#function628">Further Studies</a>) was created to parse the `hometown` feature to try to extract this information, however some of the records had difficult formats to create an automated answer. Lastly, naturally the question of the mean age of the women competitors experience a similar change in mean over the same time span? How did this change in mean age effect the mean time of the runners? These are a few further studies which could be conducted on this dataset, along with a host of others.
+
 This was also a great exercise because it showed the duality of web scraping. It is a fantastically powerful way to gather openly available data, but seemingly overnight it can be rendered useless. This case study showed that in the world of data science, one needs to be very flexible and adaptable to different situations, because technology is constantly changing and evolving.
 
 # Appendix
@@ -825,38 +829,31 @@ cpts(m.binseg)
 ```
 
 
-
+<a id="function628"></a>
 
 ## Further Studies
 
-\~~~THIS WAS EXPERIMENTAL, LET'S LEAVE OUT FOR NOW IF WE HAVE TIME OR INTEREST WE CAN COME BACK AND EDIT~~\~\~
+```{r FormatState, eval=FALSE}
+
+extract_state = function(string)
+  {
+  tmp <- string
+  if (grepl(",", string) == "TRUE"){
+    tmp <- str_trim(strsplit(string, ",")[[1]][2])
+  }
+  return(tmp)
+}
+
+df_trim$state2 <- unlist(lapply(df_trim$hometown, extract_state))
+
+df_trim$state <- ifelse((grepl(",", df_trim$hometown) == "TRUE"),substr(df_trim$hometown, # nchar(df_trim$hometown) - 2, nchar(df_trim$hometown)), "NaS")
+
+df_trim[which(str_locate(df_trim$hometown, ",") - nchar(df_trim$hometown) != -3),]
+df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= 3),]
+
+unlist(unique(df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= # 3),"hometown"]))
+```
 
 The hometown feature requires a bit more formatting because it can contain a "city, state" combo for US runners or simply a country for international runners. The next code block splits the hometown field by the comma and when the comma is missing, it is presumed that the runner is international.
 
 For this analysis we are not interested at the state level, but we keep the state and international country data and we put both into a field called "state2".
-
-!!!!!! Jason, I'm not sure what I wrote above is accurate !!!!!
-
-```{r FormatState, eval=FALSE, include=FALSE}
-# extract_state = function(string)
-#   {
-#   tmp <- string
-#   if (grepl(",", string) == "TRUE"){
-#     tmp <- str_trim(strsplit(string, ",")[[1]][2])
-#   }
-#   return(tmp)
-# }
-# 
-# #extract_state(df_trim$hometown[900])
-# 
-# df_trim$state2 <- unlist(lapply(df_trim$hometown, extract_state))
-# 
-# df_trim$state <- ifelse((grepl(",", df_trim$hometown) == "TRUE"),substr(df_trim$hometown, # nchar(df_trim$hometown) - 2, nchar(df_trim$hometown)), "NaS")
-# 
-# df_trim[which(str_locate(df_trim$hometown, ",") - nchar(df_trim$hometown) != -3),]
-# df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= 3),]
-# 
-# unlist(unique(df_trim[-which(grepl(",", df_trim$hometown) == "TRUE" | nchar(df_trim$hometown) <= # 3),"hometown"]))
-```
-
-
