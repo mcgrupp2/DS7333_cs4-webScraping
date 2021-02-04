@@ -46,7 +46,7 @@ library(changepoint)
 
 Web scraping can be a very powerful tool that can be used to gather data from the internet. One form of web scraping involves locating and extracting information embedded in HTML code. Several software packages have been developed to assist with web scraping, this case study will utilize two such packages that are included within the `tidyverse`, `xml2` and `rvest`. Using this technique can be a very valuable asset to a Data Scientist, as this case study will demonstrate, it can automate data collection across a number of web pages, decreasing the amount of time required to gather data for analysis.
 
-Though there are a few means by which web scraping can be accomplished, one such method involved parsing HTML, or Hyper Text Markup Language, text to find data of interest. Data on websites are typically contained within pre-defined HTML tags, a list can be found <a href = "https://www.w3schools.com/tags/default.asp"> here</a>. If there is data of interest on a website, the tag associated with the data can be located in the HTML text, and collected for analysis.
+Though there are a few means by which web scraping can be accomplished, one such method involves parsing HTML, or Hyper Text Markup Language, text to find data of interest. Data on websites are typically contained within pre-defined HTML tags, a list can be found <a href = "https://www.w3schools.com/tags/default.asp"> here</a>. If there is data of interest on a website, the tag associated with the data can be located in the HTML text, and collected for analysis.
 
 Even though it can be very useful technique, there is a major pitfall associated with web scraping that can interfere with data acquisition. If the site undergoes maintenance, or if the site does a major over hall and makes several changes to the site, it is possible that the tools being used to extract data may not be effective on the changed site. In spite of this draw back, web scraping is a very effective means by which data can be acquired.
 
@@ -64,7 +64,7 @@ The aim of this case study is to develop new tools to automate collection of rac
 
 ## Questions of Interest
 
-There has been an apparent trend in the age of male runners entering the Cherry Blossom Race, male runners in 1999 were typically older than those which ran the race in 2012. This case study will compare the age distribution of the runners across all 14 years of the races by using quantile-quantile plots, boxplots, density curves, and other methods to make comparisons. How have the distributions changed over the years and was it gradual?
+There has been an apparent trend in the age of male runners entering the Cherry Blossom Race, male runners in 1999 were typically older than those which ran the race in 2012. This case study will scrape the mens race data from 1999-2012 to compare the age distribution of the runners across all 14 years of the races by using quantile-quantile plots, boxplots, density curves, and other methods to make comparisons. How have the distributions changed over the years and was it gradual?
 
 # Methods
 
@@ -72,7 +72,7 @@ The accompanying code for the methods used can be found in the <a href="#functio
 
 ## Web Scraping
 
-One benefit of the new format for the Cherry Blossom website is that subsequent years have the same format for every race. What makes the new format different is that the race data results are paginated and a different call has to be made for every race, year, and gender. Even though the results are spread across several pages, the new format is far better suited to collect any range of data, as the race data for every year since the inception of the race is in the same format. The data from the site was retrieved using a series of the functions.
+One benefit of the new format for the Cherry Blossom website is that subsequent years have the same format for every race. What makes the new format different is that the race data results are paginated and a different call has to be made for every race, year, and gender. Even though the results are spread across several pages, the new format is far better suited to collect any range of data, as the race data for every year since the inception of the race is in the same format. The data from the site was retrieved using the following series of the functions.
 
 This first function `return_dataTable()` (<a href="#function621">Function 6.2.1</a>) retrieves the table containing the data on each page, which is identified by the \<table\> html tag and will return the data in a dataframe.
 
@@ -80,7 +80,7 @@ The next function `collect_data()` (<a href="#function622">Function 6.2.2</a>) g
 
 Next is the `get_all_data()` function (<a href="#function623">Function 6.2.3</a>) that takes the list of years for one gender and retrieves the data over the year range using the previous `collect_data()` function. It then stores this data as a csv for later processing as collecting multiple years can be time intensive.
 
-Finally the `scrape_data()` function (<a href="#function623">Function 6.2.3</a>) that puts everything together to build the list of years and scrape the data for both genders. Currently, the function will retrieve the list of years outlined in this Case Study (1999-2012), and for *both* genders, but it could be modified. This function would also allow the web scraping to be called as a script file.
+Finally the `scrape_data()` function (<a href="#function623">Function 6.2.3</a>) puts everything together to build the list of years and scrape the data for both genders. Currently, the function will retrieve the list of years outlined in this Case Study (1999-2012), and for *both* genders, but it could be modified. This function would also allow the web scraping to be called as a script file.
 
 ## Data Cleanup
 
@@ -174,14 +174,8 @@ names(df_row_to_add2)<-div_stat_names
 df_div_stats <- rbind(df_div_stats, df_row_to_add)
 df_div_stats <- rbind(df_div_stats, df_row_to_add2)
 
-# !!!!!!! This is where it errors for me !!!!!!!!!
-
-## It worked on my computer...lol, but really maybe it was that chunk I commented out I didn't run it -
-## when I went through it, I also didn't have all the right packages in at the top, so I had issues
-## making one of the dataframes the first run so maybe that might have been it
-
 # turn divisons into factors
-# df_div_stats$division <- as.factor(df_div_stats$division)
+df_div_stats$division <- as.factor(df_div_stats$division)
 
 # order the data correctly chronologically
 df_div_stats <- df_div_stats[order(df_div_stats$division, df_div_stats$year),]
