@@ -510,7 +510,15 @@ yearDifferenceByDiv_long %>%
   ggplot()+
   geom_bar(aes(x = as.factor(year), y = yearly_change, fill = yearly_change), stat='identity') +
   scale_fill_gradient2(low = "red", mid = "gold", high = "green", midpoint = 100) +
-  facet_wrap(~division, nrow = 7)
+  facet_wrap(~division, nrow = 7) +  
+  labs(title = 'Annual Difference by Division', 
+       subtitle = "Cherry Blossom Race", 
+       x = "Year", 
+       y = "Difference", 
+       fill = "Difference") +
+  theme(
+    axis.text.x = element_text(angle = 30)
+  )
 
 ```
 
@@ -651,6 +659,8 @@ collect_data <- function(year, gender)
 }
 ```
 
+The `collect_data()` function will scrape data for a year of data for one gender. 
+
 <a id="function623"></a>
 
 ### Collect Mutli-Year Data
@@ -706,6 +716,8 @@ scrape_data = function()
 }
 ```
 
+The `scrape_data` function will scrape all the data for men and women for the range of years in this case study.
+
 ### Data Cleaning Steps
 
 <a id="function6251"></a>
@@ -734,6 +746,8 @@ names(df_all_mens) <- col_names
 number_of_obs <- dim(df_all_mens)[1]
 ```
 
+This block of code will load the mens data.
+
 <a id="function6252"></a>
 
 #### Formatting
@@ -757,6 +771,8 @@ df_trim$year <- as.integer(unlist(strsplit(df_trim$race, "\\s"))[minus])
 # turns division column into factor
 df_trim$division <- as.factor(df_trim$division)
 ```
+
+This block provides formatting to the mens data frame, outlined in the methods section.
 
 ### Summary Dataframes
 
@@ -808,6 +824,8 @@ df_div_stats$division <- as.factor(df_div_stats$division)
 df_div_stats <- df_div_stats[order(df_div_stats$division, df_div_stats$year),]
 ```
 
+The above code chunks produce the summary dataframes which were investigated in the results section.
+
 <a id="function627"></a>
 
 ### Changepoint
@@ -821,6 +839,8 @@ m.binseg <- cpt.mean(df_age_stats$mean, method = "BinSeg")
 
 cpts(m.binseg)
 ```
+
+The above chunk finds the change point in the mean age of the men runners over the year range.
 
 
 <a id="function628"></a>
