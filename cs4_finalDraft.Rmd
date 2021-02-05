@@ -3,6 +3,7 @@ title: "Case Study 4"
 subtitle: |
   | Web Scraping
   | DS7333
+  | Jason Rupp and Indy Dhillon
 author: "Jason Rupp and Indy Dhillon"
 date: "February 4, 2021"
 output:
@@ -538,7 +539,12 @@ df_age_stats %>%
   geom_point(aes(x = as.factor(year), 
                  y = mean, 
                  color=as.factor(year)), 
-             size = 3)
+             size = 3)+  
+  labs(title = 'Mean Age of Mens Runners', 
+       subtitle = "Cherry Blossom Race, 1999-2012", 
+       x = "Year", 
+       y = "Age", 
+       color = "Year")
 
 ```
 
